@@ -11,11 +11,24 @@ import { PrismaService } from './prisma.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const redisUrl = configService.get<string>('REDIS_URL');
+        
         if (redisUrl) {
-          return {
-            connection: redisUrl, // BullMQ aceita a URL diretamente (ex: rediss://...)
-          };
+          try {
+            const url = new URL(redisUrl);
+            return {
+              connection: {
+                host: url.hostname,
+                port: parseInt(url.port, 10) || 6379,
+                username: url.username || 'default',
+                password: url.password,
+                tls: url.protocol === 'rediss:' ? {} : undefined,
+              },
+            };
+          } catch (e) {
+            console.error('Invalid REDIS_URL provided');
+          }
         }
+
         return {
           connection: {
             host: configService.get('REDIS_HOST', 'localhost'),
