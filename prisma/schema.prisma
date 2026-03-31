@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Scan {
+  id              String           @id @default(uuid())
+  status          ScanStatus       @default(PENDING)
+  riskScore       Float?
+  manifestType    ManifestType
+  results         ScanResult[]
+  userId          String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model ScanResult {
+  id              String           @id @default(uuid())
+  libraryName     String
+  libraryVersion  String
+  vulnerabilities Vulnerability[]
+  malwareReports  MalwareReport[]
+  scan            Scan             @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  scanId          String
+}
+
+model Vulnerability {
+  id              String           @id @default(uuid())
+  externalId      String           // e.g. CVE-2021-1234
+  title           String?
+  description     String?
+  severity        String?
+  cvssScore       Float?
+  scanResult      ScanResult       @relation(fields: [scanResultId], references: [id], onDelete: Cascade)
+  scanResultId    String
+}
+
+model MalwareReport {
+  id              String           @id @default(uuid())
+  engine          String
+  result          String
+  scanResult      ScanResult       @relation(fields: [scanResultId], references: [id], onDelete: Cascade)
+  scanResultId    String
+}
+
+enum ScanStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ManifestType {
+  PACKAGE_JSON
+  REQUIREMENTS_TXT
+}
