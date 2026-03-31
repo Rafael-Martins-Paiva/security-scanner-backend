@@ -4,12 +4,12 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ClerkClient, createClerkClient } from '@clerk/backend';
+import { createClerkClient } from '@clerk/backend';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  private clerkClient: ClerkClient;
+  private clerkClient;
 
   constructor(private configService: ConfigService) {
     this.clerkClient = createClerkClient({
@@ -26,10 +26,9 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      // Valida o token JWT enviado pelo Frontend (Clerk Session Token)
+      // No SDK v3+, usamos verifyToken diretamente do client ou verifyJwt
       const sessionClaims = await this.clerkClient.verifyToken(token);
       
-      // Anexa os dados do usuário à requisição
       request['auth'] = {
         userId: sessionClaims.sub,
         claims: sessionClaims,
@@ -37,6 +36,7 @@ export class AuthGuard implements CanActivate {
       
       return true;
     } catch (error) {
+      console.error('Auth Error:', error.message);
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

@@ -17,7 +17,7 @@ export class ScansController {
   async scanManifest(@Body() body: { content: string, type: ManifestType }, @Req() req: any) {
     const userId = req.auth.userId;
     const scan = await this.scansService.createScan(userId, body.type);
-...
+
     await this.scansQueue.add('process', {
       scanId: scan.id,
       content: body.content,
@@ -33,7 +33,7 @@ export class ScansController {
 
   @Get('history')
   async getHistory(@Req() req: any) {
-    const userId = req.auth?.userId || 'anonymous-user';
+    const userId = req.auth.userId;
     return this.scansService.getHistory(userId);
   }
 
